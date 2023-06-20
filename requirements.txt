@@ -1,0 +1,12 @@
+caikit
+
+# Only needed for HuggingFace
+scipy
+torch
+transformers~=4.27.2
+pandas
+rdkit
+pytorch-lightning
+pytorch-fast-transformers
+
+

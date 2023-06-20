@@ -1,0 +1,44 @@
+aug: null
+batch_size: 32
+checkpoint_dir: ./checkpoints_toxicity-causal-epa/ld50/models
+checkpoint_every: 1000
+checkpoint_root: ./checkpoints_toxicity-causal-epa/ld50
+checkpoints_folder: ./checkpoints_toxicity-causal-epa
+d_dropout: 0.1
+data_root: ../data/toxicity-prediction-causal
+dataset_name: toxicity-prediction
+dataset_names:
+- valid
+- test
+desc_skip_connection: false
+device: cuda
+dims:
+- 768
+- 768
+- 768
+- 1
+dropout: 0.1
+eval_dataset_length: null
+fc_h: 512
+fold: 0
+from_scratch: false
+lr_multiplier: 1
+lr_start: 3.0e-05
+max_epochs: 2000
+measure_name: ld50
+mode: avg
+n_batch: 512
+n_embd: 768
+n_head: 12
+n_jobs: 1
+n_layer: 12
+num_classes: null
+num_feats: 32
+num_workers: 8
+results_dir: ./checkpoints_toxicity-causal-epa/ld50/results
+run_name: toxicity-prediction_ld50_rot_0_avg_lr_3e-05_batch_32_drop_0.1_[768, 768,
+  768, 1]
+seed: 12345
+seed_path: ../data/checkpoints/N-Step-Checkpoint_3_30000.ckpt
+smiles_embedding: /dccstor/medscan7/smallmolecule/runs/ba-predictor/small-data/embeddings/protein/ba_embeddings_tanh_512_2986138_2.pt
+train_dataset_length: null
