@@ -2,9 +2,9 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
-from fast_transformers.feature_maps import GeneralizedRandomFeatures
+# from fast_transformers.feature_maps import GeneralizedRandomFeatures
 from functools import partial
-from rotate_builder import RotateEncoderBuilder as rotate_builder
+# from rotate_builder import RotateEncoderBuilder as rotate_builder
 
 
 class LightningModule(pl.LightningModule):
@@ -25,21 +25,21 @@ class LightningModule(pl.LightningModule):
         # Word embeddings layer
         n_vocab, d_emb = len(tokenizer.vocab), config.n_embd
         # input embedding stem
-        builder = rotate_builder.from_kwargs(
-            n_layers=config.n_layer,
-            n_heads=config.n_head,
-            query_dimensions=config.n_embd // config.n_head,
-            value_dimensions=config.n_embd // config.n_head,
-            feed_forward_dimensions=config.n_embd,
-            attention_type='linear',
-            feature_map=partial(GeneralizedRandomFeatures, n_dims=config.num_feats),
-            activation='gelu',
-        )
+        # builder = rotate_builder.from_kwargs(
+        #     n_layers=config.n_layer,
+        #     n_heads=config.n_head,
+        #     query_dimensions=config.n_embd // config.n_head,
+        #     value_dimensions=config.n_embd // config.n_head,
+        #     feed_forward_dimensions=config.n_embd,
+        #     attention_type='linear',
+        #     # feature_map=partial(GeneralizedRandomFeatures, n_dims=config.num_feats),
+        #     activation='gelu',
+        # )
         self.pos_emb = None
         self.tok_emb = nn.Embedding(n_vocab, config.n_embd)
         self.drop = nn.Dropout(config.d_dropout)
         ## transformer
-        self.blocks = builder.get()
+        # self.blocks = builder.get()
         self.lang_model = self.lm_layer(config.n_embd, n_vocab)
         self.train_config = config
         # if we are starting from scratch set seeds

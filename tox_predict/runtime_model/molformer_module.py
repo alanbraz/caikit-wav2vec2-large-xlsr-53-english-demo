@@ -23,21 +23,20 @@ from transformers import pipeline
 
 # Local
 from caikit.core import ModuleBase, ModuleLoader, ModuleSaver, TaskBase, module, task
-from models.molformer_predict_tox import LightningModule
-
+from tox_predict.runtime_model.molformer_predict_tox import LightningModule
+# from fast_transformers.masking import LengthMask as LM
 
 from tokenizer import MolTranBertTokenizer
-from tox_predict.data_model.classification import (
-    ClassificationPrediction,
-    ClassInfo,
-    TextInput,
+from tox_predict.data_model.tox_prediction import (
+    ScoreOutput,
+    SmilesInput,
 )
 from tox_predict.runtime_model.helper import dotdict
 
 
 @task(
-    required_parameters={"text_input": TextInput},
-    output_type=ClassificationPrediction,
+    required_parameters={"text_input": SmilesInput},
+    output_type=ScoreOutput,
 )
 class ToxPredictionTask(TaskBase):
     pass
@@ -53,6 +52,12 @@ class MolFormerModule(ModuleBase):
     """Class to wrap sentiment analysis pipeline from HuggingFace"""
 
     def __init__(self, model_path) -> None:
+        super().__init__()
+        loader = ModuleLoader(model_path)
+        config = loader.config
+        # model = pipeline(model=config.hf_artifact_path, task="sentiment-analysis")
+        # self.sentiment_pipeline = model
+
         print(os.getcwd())
         with open('data/hparams.yaml') as f:
             data = yaml.load(f, Loader=SafeLoader)
@@ -60,33 +65,51 @@ class MolFormerModule(ModuleBase):
 
         hparams = dotdict(data)
         tokenizer = MolTranBertTokenizer('data/bert_vocab.txt')
-        model = LightningModule(hparams, tokenizer).load_from_checkpoint('data/checkpoints/N-Step-Checkpoint_3_30000.ckpt',
+        self.model = LightningModule(hparams, tokenizer).load_from_checkpoint('data/checkpoints/N-Step-Checkpoint_3_30000.ckpt',
                                                                          strict=False,
                                                                          config=hparams,
                                                                          tokenizer=tokenizer,
                                                                          vocab=len(tokenizer.vocab),
                                                                          map_location=torch.device('cpu'))
-        model.eval()
+        self.model.eval()
 
 
 
 
 
-    def run(self, text_input: TextInput) -> ClassificationPrediction:
+    def run(self, text_input: SmilesInput) -> ScoreOutput:
         """Run HF sentiment analysis
         Args:
-            text_input: TextInput
+            text_input: SmilesInput
         Returns:
             ClassificationPrediction: predicted classes with their confidence score.
         """
-        raw_results = self.sentiment_pipeline([text_input.text])
 
-        class_info = []
-        for result in raw_results:
-            class_info.append(
-                ClassInfo(class_name=result["label"], confidence=result["score"])
-            )
-        return ClassificationPrediction(class_info)
+        # Tokenizer - Creating tokens from SMILES
+        tokens = self.model.tokenizer([text_input.text], padding=True, truncation =True, add_special_tokens=True,return_tensors="pt" )
+        idx = torch.tensor(tokens['input_ids'])
+        mask = torch.tensor(tokens['attention_mask'])
+
+        # Data transformation to feed the model
+        token_embeddings = self.model.tok_emb(idx) # each index maps to a (learnable) vector
+        x = self.model.drop(token_embeddings)
+        # x = self.model.blocks(x, length_mask=LM(mask.sum(-1)))
+        token_embeddings = x
+
+        input_mask_expanded = mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+        sum_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1)
+        sum_mask = torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+        loss_input = sum_embeddings / sum_mask
+
+        outmap_min, _ = torch.min(loss_input, dim=1, keepdim=True)
+        outmap_max, _ = torch.max(loss_input, dim=1, keepdim=True)
+        outmap = (loss_input - outmap_min) / (outmap_max - outmap_min) # Broadcasting rules apply
+        
+        print('Predicting...')
+        
+        outputs = self.model.net.forward(outmap).squeeze()
+        print(outputs)
+        return ScoreOutput(outputs.item())
 
     @classmethod
     def bootstrap(cls, model_path="distilbert-base-uncased-finetuned-sst-2-english"):

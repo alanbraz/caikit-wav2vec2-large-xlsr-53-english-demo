@@ -14,3 +14,4 @@
 # # Local
 # Local
 from .molformer_module import MolFormerModule
+# from .molformer_predict_tox import LightningModule

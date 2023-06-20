@@ -17,7 +17,7 @@ import grpc
 
 # Local
 from caikit.runtime.service_factory import ServicePackageFactory
-from tox_predict.data_model import TextInput
+from tox_predict.data_model import SmilesInput
 
 inference_service = ServicePackageFactory().get_service_package(
     ServicePackageFactory.ServiceType.INFERENCE,
@@ -30,8 +30,8 @@ client_stub = inference_service.stub_class(channel)
 
 # print(dir(client_stub))
 
-for text in ["I am not feeling well today!", "Today is a nice sunny day"]:
-    input_text_proto = TextInput(text=text).to_proto()
+for text in ["Cc1ncc([N+](=O)[O-])n1CCO"]:
+    input_text_proto = SmilesInput(text=text).to_proto()
     request = inference_service.messages.ToxPredictionTaskRequest(
         text_input=input_text_proto
     )
@@ -39,4 +39,4 @@ for text in ["I am not feeling well today!", "Today is a nice sunny day"]:
         request, metadata=[("mm-model-id", "tox_predict")]
     )
     print("Text:", text)
-    print("RESPONSE:", response)
+    print("RESPONSE:", response.score)

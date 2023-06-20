@@ -13,4 +13,4 @@
 # limitations under the License.
 
 # Local
-from .classification import ClassificationPrediction, ClassInfo, TextInput
+from .tox_prediction import SmilesInput, ScoreOutput
