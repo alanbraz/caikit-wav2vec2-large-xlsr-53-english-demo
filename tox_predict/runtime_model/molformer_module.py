@@ -23,7 +23,6 @@ from transformers import pipeline
 
 # Local
 from caikit.core import ModuleBase, ModuleLoader, ModuleSaver, TaskBase, module, task
-from models.molformer_predict_tox import LightningModule
 
 
 from tokenizer import MolTranBertTokenizer
@@ -33,6 +32,7 @@ from tox_predict.data_model.classification import (
     TextInput,
 )
 from tox_predict.runtime_model.helper import dotdict
+from tox_predict.runtime_model.molformer_predict_tox import LightningModule
 
 
 @task(
