@@ -32,6 +32,7 @@ from tox_predict.data_model.tox_prediction import (
     SmilesInput,
 )
 from tox_predict.runtime_model.helper import dotdict
+from tox_predict.runtime_model.molformer_predict_tox import LightningModule
 
 
 @task(
