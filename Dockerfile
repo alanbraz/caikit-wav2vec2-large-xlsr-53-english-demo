@@ -23,11 +23,11 @@ FROM reqs
 
 COPY . .
 
-ENV PROXY_ENDPOINT=${PROXY_ENDPOINT:-"localhost:8085"}
+ENV PROXY_ENDPOINT=${PROXY_ENDPOINT:-"0.0.0.0:8085"}
 ENV SERVE_PORT=${GATEWAY_PORT:-8080}
 
 EXPOSE 8080
 EXPOSE 8085
 
-CMD python start_runtime.py && /app --swagger_path=/swagger
+CMD python start_runtime.py & ./gateway/app --swagger_path=./gateway/swagger & wait -n
 # curl -X POST "https://caikit-example-molformer.fm-model-train-9ca4d14d48413d18ce61b80811ba4308-0000.us-south.containers.appdomain.cloud/v1/caikit.runtime.TextSentiment/TextSentimentService/HuggingFaceSentimentTaskPredict" -H "accept: application/json" -H "grpc-metadata-mm-model-id: text_sentiment" -H "content-type: application/json" -d "{ \"textInput\": { \"text\": \"awful test\" }}"
