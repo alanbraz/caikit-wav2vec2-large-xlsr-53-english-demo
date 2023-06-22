@@ -1,0 +1,17 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit.runtime.ToxPredict;
+import "smilesinput.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message ToxPredictionTaskRequest {
+
+  /*-- fields --*/
+  tox_prediction.data_model.SmilesInput text_input = 1;
+}

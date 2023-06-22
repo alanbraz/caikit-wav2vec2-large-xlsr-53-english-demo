@@ -1,4 +1,4 @@
-caikit
+caikit==0.8.0
 
 # Only needed for HuggingFace
 scipy
@@ -7,4 +7,4 @@ transformers~=4.27.2
 pandas
 rdkit
 pytorch-lightning
-pytorch-fast-transformers
+# pytorch-fast-transformers
