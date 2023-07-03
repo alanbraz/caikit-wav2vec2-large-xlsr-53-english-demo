@@ -3,7 +3,7 @@ caikit==0.8.0
 # Only needed for HuggingFace
 scipy
 torch
-transformers~=4.27.2
+transformers~=4.30.0
 pandas
 rdkit
 pytorch-lightning
