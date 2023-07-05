@@ -8,3 +8,4 @@ pandas
 rdkit
 pytorch-lightning
 # pytorch-fast-transformers
+gradio
