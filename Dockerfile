@@ -21,9 +21,12 @@ RUN pip install -r requirements.txt
 
 FROM reqs
 
+RUN pip install gradio
+
 COPY app.py .
-COPY models .
-COPY tox_predict .
+COPY models models
+COPY tox_predict tox_predict
+COPY tokenizer.py .
 
 EXPOSE 8080
 
