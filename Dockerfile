@@ -21,8 +21,6 @@ RUN pip install -r requirements.txt
 
 FROM reqs
 
-RUN pip install gradio
-
 COPY app.py .
 COPY models models
 COPY tox_predict tox_predict
