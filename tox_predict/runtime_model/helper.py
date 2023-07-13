@@ -11,7 +11,7 @@ class dotdict(dict):
     __delattr__ = dict.__delitem__
 
 def convert_to_mgkg(neglogld50s, smiles):
-        df_smiles = pd.DataFrame (smiles, columns = ['smiles'])
+        df_smiles = pd.DataFrame(smiles, columns=['smiles'])
         PandasTools.AddMoleculeColumnToFrame(df_smiles, smilesCol='smiles')
         for neglogld50, smile in zip(neglogld50s, smiles):
             molwt = Descriptors.MolWt(Chem.MolFromSmiles(smile))

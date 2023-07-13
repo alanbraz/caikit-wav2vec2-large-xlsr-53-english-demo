@@ -28,3 +28,5 @@ class SmilesInput(DataObjectBase):
 @dataobject(package="tox_prediction.data_model")
 class ScoreOutput(DataObjectBase):
     score: float
+    epa: float
+    epa_mgkg: float
