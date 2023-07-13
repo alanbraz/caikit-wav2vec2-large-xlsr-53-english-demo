@@ -19,11 +19,9 @@ import os
 import torch
 import yaml
 from yaml import SafeLoader
-from transformers import pipeline
 
 # Local
-from caikit.core import ModuleBase, ModuleLoader, ModuleSaver, TaskBase, module, task
-from tox_predict.runtime_model.molformer_predict_tox import LightningModule
+from caikit.core import ModuleBase, ModuleLoader, ModuleSaver, module, TaskBase, task
 # from fast_transformers.masking import LengthMask as LM
 
 from tokenizer import MolTranBertTokenizer
@@ -31,7 +29,8 @@ from tox_predict.data_model.tox_prediction import (
     ScoreOutput,
     SmilesInput,
 )
-from tox_predict.runtime_model.helper import dotdict
+
+from tox_predict.runtime_model.helper import dotdict, convert_to_epa, convert_to_mgkg
 from tox_predict.runtime_model.molformer_predict_tox import LightningModule
 
 
@@ -66,17 +65,14 @@ class MolFormerModule(ModuleBase):
 
         hparams = dotdict(data)
         tokenizer = MolTranBertTokenizer('data/bert_vocab.txt')
-        self.model = LightningModule(hparams, tokenizer).load_from_checkpoint('data/checkpoints/N-Step-Checkpoint_3_30000.ckpt',
-                                                                         strict=False,
-                                                                         config=hparams,
-                                                                         tokenizer=tokenizer,
-                                                                         vocab=len(tokenizer.vocab),
-                                                                         map_location=torch.device('cpu'))
+        self.model = LightningModule(hparams, tokenizer).load_from_checkpoint(
+            'data/checkpoints/N-Step-Checkpoint_3_30000.ckpt',
+            strict=False,
+            config=hparams,
+            tokenizer=tokenizer,
+            vocab=len(tokenizer.vocab),
+            map_location=torch.device('cpu'))
         self.model.eval()
-
-
-
-
 
     def run(self, text_input: SmilesInput) -> ScoreOutput:
         """Run HF sentiment analysis
@@ -87,12 +83,14 @@ class MolFormerModule(ModuleBase):
         """
 
         # Tokenizer - Creating tokens from SMILES
-        tokens = self.model.tokenizer([text_input.text], padding=True, truncation =True, add_special_tokens=True,return_tensors="pt" )
+        tokens = self.model.tokenizer([text_input.text],
+                                      padding=True, truncation=True,
+                                      add_special_tokens=True, return_tensors="pt")
         idx = torch.tensor(tokens['input_ids'])
         mask = torch.tensor(tokens['attention_mask'])
 
         # Data transformation to feed the model
-        token_embeddings = self.model.tok_emb(idx) # each index maps to a (learnable) vector
+        token_embeddings = self.model.tok_emb(idx)  # each index maps to a (learnable) vector
         x = self.model.drop(token_embeddings)
         # x = self.model.blocks(x, length_mask=LM(mask.sum(-1)))
         token_embeddings = x
@@ -104,12 +102,20 @@ class MolFormerModule(ModuleBase):
 
         outmap_min, _ = torch.min(loss_input, dim=1, keepdim=True)
         outmap_max, _ = torch.max(loss_input, dim=1, keepdim=True)
-        outmap = (loss_input - outmap_min) / (outmap_max - outmap_min) # Broadcasting rules apply
-        
+        outmap = (loss_input - outmap_min) / (outmap_max - outmap_min)  # Broadcasting rules apply
+
         print('Predicting...')
-        
+
         outputs = self.model.net.forward(outmap).squeeze()
         print(outputs)
+
+        # Converting to Epa Categories
+        pred_epa = list(convert_to_epa(outputs.squeeze(), text_input))
+        # Converting to Mg/Kg  Units
+        pred_epa_mgkg = list(convert_to_mgkg(outputs.squeeze(), text_input))
+        print(f"EPA:{pred_epa} EPA-mgkg: {pred_epa_mgkg}")
+
+
         return ScoreOutput(outputs.item())
 
     @classmethod
