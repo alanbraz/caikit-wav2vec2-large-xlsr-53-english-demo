@@ -109,14 +109,13 @@ class MolFormerModule(ModuleBase):
         outputs = self.model.net.forward(outmap).squeeze()
         print(outputs)
 
-        # Converting to Epa Categories
-        pred_epa = list(convert_to_epa(outputs.squeeze(), text_input))
-        # Converting to Mg/Kg  Units
-        pred_epa_mgkg = list(convert_to_mgkg(outputs.squeeze(), text_input))
-        print(f"EPA:{pred_epa} EPA-mgkg: {pred_epa_mgkg}")
+        # # Converting to Epa Categories
+        pred_epa = list(convert_to_epa(outputs.reshape(1), [text_input.text]))
+        # # Converting to Mg/Kg  Units
+        pred_epa_mgkg = list(convert_to_mgkg(outputs.reshape(1), [text_input.text]))
+        print(f"EPA:{pred_epa[0]} EPA-mgkg: {pred_epa_mgkg[0]:5.2f}")
 
-
-        return ScoreOutput(outputs.item())
+        return ScoreOutput(score=outputs.item(), epa=pred_epa[0], epa_mgkg=pred_epa_mgkg[0])
 
     @classmethod
     def bootstrap(cls, model_path="distilbert-base-uncased-finetuned-sst-2-english"):

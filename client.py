@@ -30,7 +30,11 @@ client_stub = inference_service.stub_class(channel)
 
 # print(dir(client_stub))
 
-for text in ["Cc1ncc([N+](=O)[O-])n1CCO"]:
+for text in ["CC(NC)C(O)c1ccccc1",
+             "Cc1cc(ccc1N)-c1cc(C)c(N)cc1",
+             "Cc1cc2c(cc1C)N=C1C(=NC(=O)NC1=O)N2CC(O)C(O)C(O)CO",
+             "CCCCCCCCCCCC(=O)OC=C",
+             "O=C=Nc1cc(c(Cl)cc1)C(F)(F)F"]:
     input_text_proto = SmilesInput(text=text).to_proto()
     request = inference_service.messages.ToxPredictionTaskRequest(
         text_input=input_text_proto
@@ -40,3 +44,5 @@ for text in ["Cc1ncc([N+](=O)[O-])n1CCO"]:
     )
     print("Text:", text)
     print("RESPONSE:", response.score)
+    print("EPA:", response.epa)
+    print("EPA mg/kg:", response.epa_mgkg)
