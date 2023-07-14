@@ -38,22 +38,26 @@ def tox(smiles):
     response = client_stub.ToxPredictionTaskPredict(
         request, metadata=[("mm-model-id", "tox_predict")]
     )
-    return response.score
+    return [ response.score, response.epa, response.epa_mgkg ]
 
 # We instantiate the Textbox class
 textbox = gr.Textbox(label="Smiles:", placeholder="CCC", lines=1)
-numberbox = gr.Number(label="Score")
 
 with RuntimeGRPCServer(inference_service=inference_service, training_service=None) as backend:
     gr.Interface(
         fn=tox, 
         inputs=textbox, 
-        outputs=numberbox, 
+        outputs=[ gr.Number(label="Score"), gr.Number(label="EPA"), gr.Number(label="EPA mg/kg") ], 
         title="MolFormer", 
+        allow_flagging="never",
         # description = """
         # The bot was trained to answer questions based on Rick and Morty dialogues. Ask Rick anything!
         # <img src="https://huggingface.co/spaces/course-demos/Rick_and_Morty_QA/resolve/main/rick.png" width=200px>
         # """,
         # article = "Check out [the original Rick and Morty Bot](https://huggingface.co/spaces/kingabzpro/Rick_and_Morty_Bot) that this demo is based off of.",
-        examples=[ "Cc1ncc([N+](=O)[O-])n1CCO", "CCC" ]).launch(share=False, show_tips=False, server_name="0.0.0.0", server_port=8080)
+        examples=[ "CC(NC)C(O)c1ccccc1",
+             "Cc1cc(ccc1N)-c1cc(C)c(N)cc1",
+             "Cc1cc2c(cc1C)N=C1C(=NC(=O)NC1=O)N2CC(O)C(O)C(O)CO",
+             "CCCCCCCCCCCC(=O)OC=C",
+             "O=C=Nc1cc(c(Cl)cc1)C(F)(F)F" ]).launch(share=False, show_tips=False, server_name="0.0.0.0", server_port=8080)
     backend.server.wait_for_termination()
