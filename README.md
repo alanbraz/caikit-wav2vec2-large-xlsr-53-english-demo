@@ -22,3 +22,13 @@ In one terminal, start the runtime server:
 ```shell
 python app.py
 ```
+
+Wait it downlaod the models and start the gradio server:
+
+```sh
+Running on local URL:  http://127.0.0.1:8080
+```
+
+Access the browser, select a sample audio or record you own to test it out!
+
+![demo](caikit-gradio-demo.png)
