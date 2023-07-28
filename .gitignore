@@ -3,3 +3,4 @@ data/checkpoints/*
 env
 __pycache__
 #protos
+venv

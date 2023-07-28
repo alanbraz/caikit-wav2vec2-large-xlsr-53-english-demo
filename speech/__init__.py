@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-module_id: molFormertox-predict
-name: MolFormerModule
-version: 0.0.1
+# Standard
+import os
+
+# Local
+from . import data_model, runtime_model
+import caikit
+
+# Give the path to the `config.yml`
+CONFIG_PATH = os.path.realpath(os.path.join(os.path.dirname(__file__), "config.yml"))
+
+caikit.configure(CONFIG_PATH)

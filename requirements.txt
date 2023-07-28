@@ -1,11 +1,14 @@
-caikit==0.8.0
+caikit[runtime-grpc, runtime-http]
 
 # Only needed for HuggingFace
 scipy
 torch
-transformers~=4.30.0
-pandas
-rdkit
-pytorch-lightning
-# pytorch-fast-transformers
+transformers~=4.27.2
+
+# For http client
+requests
+
+deepspeech
+huggingsound
 gradio
+fastapi==0.99.1

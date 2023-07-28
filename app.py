@@ -1,63 +1,74 @@
+# from transformers import pipeline
+# p = pipeline("automatic-speech-recognition")
 
-# Copyright The Caikit Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# Third Party
+# from huggingsound import SpeechRecognitionModel
+# model = SpeechRecognitionModel("jonatasgrosman/wav2vec2-large-xlsr-53-english")
+# audio_paths = ["/path/to/file.mp3", "/path/to/another_file.wav"]
+# p2 = pipeline("automatic-speech-recognition", "jonatasgrosman/wav2vec2-large-xlsr-53-english")
+
 import gradio as gr
 import grpc
+import sys
+from os import path, listdir
+
 
 # Local
+import caikit
+from caikit.runtime import grpc_server, http_server
+# import requests
 from caikit.runtime.service_factory import ServicePackageFactory
-from caikit.runtime.grpc_server import RuntimeGRPCServer
-from tox_predict.data_model import SmilesInput
+from speech.data_model.transcription import AudioPath
+
+models_directory = path.abspath(path.join(path.dirname(__file__), "models"))
+caikit.config.configure(
+    config_dict={
+        "merge_strategy": "merge",
+        "runtime": {
+            "local_models_dir": models_directory,
+            "library": "speech",
+        },
+    }
+)
+
+sys.path.append(
+    path.abspath(path.join(path.dirname(__file__), "../"))
+) 
 
 inference_service = ServicePackageFactory().get_service_package(
     ServicePackageFactory.ServiceType.INFERENCE,
 )
 
+model_id = "speech"
+
 port = 8085
 channel = grpc.insecure_channel(f"localhost:{port}")
-
 client_stub = inference_service.stub_class(channel)
-  
-def tox(smiles):
-    input_text_proto = SmilesInput(text=smiles).to_proto()
-    request = inference_service.messages.ToxPredictionTaskRequest(
-        text_input=input_text_proto
-    )
-    response = client_stub.ToxPredictionTaskPredict(
-        request, metadata=[("mm-model-id", "tox_predict")]
-    )
-    return [ response.score, response.epa, response.epa_mgkg ]
 
-# We instantiate the Textbox class
-textbox = gr.Textbox(label="Smiles:", placeholder="CCC", lines=1)
+# default pipeline
+from transformers import pipeline
+p = pipeline("automatic-speech-recognition")
+# facebook/wav2vec2-base-960h
 
-with RuntimeGRPCServer(inference_service=inference_service, training_service=None) as backend:
+def transcribe(path):
+    request = inference_service.messages.HuggingFaceSpeechTaskRequest(
+        audio_input=AudioPath(file_path=path).to_dict()
+    )
+    response = client_stub.HuggingFaceSpeechTaskPredict(
+        request, metadata=[("mm-model-id", model_id)], timeout=100
+    )
+    return [ p([path])[0]["text"], response.text, response.probabilities ]
+
+dir_path = "samples"
+
+with grpc_server.RuntimeGRPCServer(inference_service=inference_service, training_service=None) as backend:
     gr.Interface(
-        fn=tox, 
-        inputs=textbox, 
-        outputs=[ gr.Number(label="Score"), gr.Number(label="EPA"), gr.Number(label="EPA mg/kg") ], 
-        title="MolFormer", 
+        fn=transcribe, 
+        inputs=gr.Microphone(type="filepath", format="mp3"), 
+        outputs=[ gr.Textbox(label="Default model text"), gr.Textbox(label="Transcription"), gr.Textbox(label="Probabilities") ],
+        title="Speech to text demo", 
         allow_flagging="never",
-        # description = """
-        # The bot was trained to answer questions based on Rick and Morty dialogues. Ask Rick anything!
-        # <img src="https://huggingface.co/spaces/course-demos/Rick_and_Morty_QA/resolve/main/rick.png" width=200px>
-        # """,
-        # article = "Check out [the original Rick and Morty Bot](https://huggingface.co/spaces/kingabzpro/Rick_and_Morty_Bot) that this demo is based off of.",
-        examples=[ "CC(NC)C(O)c1ccccc1",
-             "Cc1cc(ccc1N)-c1cc(C)c(N)cc1",
-             "Cc1cc2c(cc1C)N=C1C(=NC(=O)NC1=O)N2CC(O)C(O)C(O)CO",
-             "CCCCCCCCCCCC(=O)OC=C",
-             "O=C=Nc1cc(c(Cl)cc1)C(F)(F)F" ]).launch(share=False, show_tips=False, server_name="0.0.0.0", server_port=8080)
-    backend.server.wait_for_termination()
+        description = "This demos sends the same audio to the HuggingFace automatic-speech-recognition pipeline default model [facebook/wav2vec2-base-960h](https://huggingface.co/facebook/wav2vec2-base-960h) and the [jonatasgrosman/wav2vec2-large-xlsr-53-english](https://huggingface.co/jonatasgrosman/wav2vec2-large-xlsr-53-english) model.",
+        article = "Check out [the original model](https://huggingface.co/jonatasgrosman/wav2vec2-large-xlsr-53-english).",
+        examples= [ path.join(dir_path, file_path) for file_path in sorted(listdir(dir_path)) ]
+        ).launch(share=False, show_tips=False, server_port=8080, server_name=None)
+    backend.wait_for_termination()
